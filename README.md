@@ -17,6 +17,8 @@
 
 I'll delelete this chapter once this demonstration is ready.
 
+Dummy.
+
 # Introduction
 
 This demonstration can be used in training new cloud specialists who don't need to have any prior knowledge of GCP (Google Cloud Platform) but who want to start working on GCP projects and building their GCP competence (well, a bit of GCP knowledge is required - GCP main concepts, how to use the GCP Portal and CLI).
