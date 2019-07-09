@@ -1,0 +1,38 @@
+info:
+  title: Deployment
+
+imports:
+- path: apis.py
+
+required:
+- billing-account-name
+- project-id
+- project-name
+
+additionalProperties: false
+properties:
+  project-name:
+    description: >
+      Human-readable project name.
+    type: string
+  organization-id:
+    description: >
+      Organization id.
+    type: string
+    pattern: ^[0-9]{8,25}$
+  parent-folder-id:
+    description: >
+      Parent folder id.
+    type: string
+    pattern: ^[0-9]{8,25}$
+  billing-account-name:
+    description: >
+      The ID of the billing account.
+    type: string
+    pattern: ^billingAccounts/[a-zA-Z0-9]([-a-zA-Z0-9]+[-a-zA-Z0-9]$)?
+  apis:
+    description: >
+      The list of APIs to enable for each project.
+    type: array
+    items:
+      type: string
