@@ -4,6 +4,7 @@
 # Table of Contents  <!-- omit in toc -->
 - [WORK IN PROGRESS](#WORK-IN-PROGRESS)
 - [Introduction](#Introduction)
+- [Issue with Creating the Infra Project Using Deployment Manager](#Issue-with-Creating-the-Infra-Project-Using-Deployment-Manager)
 - [GCP Solution](#GCP-Solution)
   - [Project](#Project)
   - [Vpc](#Vpc)
@@ -32,6 +33,21 @@ I tried to keep this demonstration as simple as possible. The main purpose is no
 There are two equivalent cloud native deployment demonstrations in other "Big three" cloud provider platforms: AWS demonstration - [aws-intro-cloudformation-demo](https://github.com/tieto-pc/aws-intro-cloudformation-demo), and Azure demonstration - [azure-intro-arm-demo](https://github.com/tieto-pc/azure-intro-arm-demo) - compare the terraform code between these GCP, AWS and Azure infra implementations.
 
 There are a lot of [Terraform examples provided by Google](https://github.com/GoogleCloudPlatform/terraform-google-examples) - you should use these examples as a starting point for your own GCP Terraform IaC, I did too.
+
+
+# Issue with Creating the Infra Project Using Deployment Manager
+
+I spent one day trying to figure out why I can't create the infra project using Deployment Manager. I tried to follow the [Automating project creation with Google Cloud Deployment Manager](https://cloud.google.com/blog/products/gcp/automating-project-creation-with-google-cloud-deployment-manager) document but I got constantly the same error: 
+
+```text
+message: '{"ResourceType":"cloudresourcemanager.v1.project","ResourceErrorCode":"403","ResourceErrorMessage":{"code":403,"message":"User
+    is not authorized.","status":"PERMISSION_DENIED","statusMessage":"Forbidden","requestPath":"https://cloudresourcemanager.googleapis.com/v1/projects","httpMethod":"POST"}}'
+```
+
+This was really frustrating since I was able to create the infra project earlier using Terraform and also using command ```gcloud projects create ...```. But there was no ```roles/resourcemanager.projectCreator``` role (there was Resource Manager / "Project Deleter" and "Project Mover" roles though, :-) ) when I tried to add that role for the admin project's service account as described in [README](https://github.com/GoogleCloudPlatform/deploymentmanager-samples/tree/master/examples/v2/project_creation) of the project_creation sample.
+
+
+Finally I just gave in - maybe this is not just possible in my corporation GCP organization or I missed something in the configuration. Anyway, I created a script to create the infra project manually. Maybe later when I have more experience to use Deployment Manager I figure out the reason for this - let's then modify this demo so that also the infra project gets created by the deployment manager.
 
 
 # GCP Solution

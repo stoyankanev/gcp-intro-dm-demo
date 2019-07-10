@@ -8,5 +8,5 @@ then
 fi
 
 
-#gcloud deployment-manager deployments create ${VAR_INFRA_PROJ_ID}-deployment --config deployment.yaml --project $VAR_ADMIN_PROJ_ID
-gcloud deployment-manager deployments create ${VAR_INFRA_PROJ_ID}-deployment --config deployment.yaml
+gcloud deployment-manager deployments create ${VAR_INFRA_PROJ_ID}-deployment --config deployment.yaml --project $VAR_ADMIN_PROJ_ID
+#gcloud deployment-manager deployments create ${VAR_INFRA_PROJ_ID}-deployment --config deployment.yaml

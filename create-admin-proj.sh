@@ -8,8 +8,8 @@ then
 fi
 
 
-# Create projects.
-echo "*** Creating projects... ***"
+# Create admin project.
+echo "*** Creating admin project... ***"
 gcloud projects create $VAR_ADMIN_PROJ_ID --folder=$VAR_FOLDER_ID --name=$VAR_ADMIN_PROJ_NAME
 
 # Create gcloud configuration for deployment manager parent project.
