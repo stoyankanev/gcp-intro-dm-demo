@@ -4,6 +4,7 @@
 # Table of Contents  <!-- omit in toc -->
 - [WORK IN PROGRESS](#WORK-IN-PROGRESS)
 - [Introduction](#Introduction)
+- [Generating the SSH Key](#Generating-the-SSH-Key)
 - [GCP Solution](#GCP-Solution)
   - [Project](#Project)
   - [Vpc](#Vpc)
@@ -35,6 +36,31 @@ I tried to keep this demonstration as simple as possible. The main purpose is no
 There are two equivalent cloud native deployment demonstrations in other "Big three" cloud provider platforms: AWS demonstration - [aws-intro-cloudformation-demo](https://github.com/tieto-pc/aws-intro-cloudformation-demo), and Azure demonstration - [azure-intro-arm-demo](https://github.com/tieto-pc/azure-intro-arm-demo) - compare the terraform code between these GCP, AWS and Azure infra implementations.
 
 There are a lot of [Terraform examples provided by Google](https://github.com/GoogleCloudPlatform/terraform-google-examples) - you should use these examples as a starting point for your own GCP Terraform IaC, I did too.
+
+BTW. I just later realized that the repo name **gcp-intro-dp-demo** was a bit poor. I was thinking of Deployment manager => deployment => dp when thinking of the acronym. A better and more used acronym would have been dm, of course. Sorry about that, but I'm not going to change it now.
+
+
+# Generating the SSH Key
+
+Let's first manually generate the ssh key that we need when we validate that we can ssh to the VM (the Terraform version creates the key pair automatically but I didn't bother to investigate how to do this using Deployment manager).
+
+You can generate the ssh key that we are going to need using the following procedure (in bash, using Windows you have google how to do it, possibly the easiest way to do this in a Windows box is to use Git Bash).
+
+```bash
+mkdir .ssh
+cd .ssh
+ssh-keygen -t rsa -f dp-vm -C user@debian.com
+xclip -sel clip < dp-vm.pub
+```
+
+Then paste the string to the ```deployment.yaml``` file (there is a [deployment-template.yaml](deployment-template.yaml) that you can use as a template) - for the value of parameter ```public_key```.
+
+TODO: You can logon to machine like:
+
+```bash
+ssh -i .ssh/dp-vm user@IP-NUMBER-HERE
+```
+
 
 
 

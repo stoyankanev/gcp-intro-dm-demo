@@ -47,6 +47,8 @@ def createVM(context):
     my_ip_name = getExternalIpName(context)
     my_subnet_name = vpc.getSubnetworkName(context)
     source_image = context.properties['source_image']
+    # See: https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys
+    public_key = context.properties['public_key']
 
     ret = {
         'name': my_vm_name,
@@ -70,7 +72,15 @@ def createVM(context):
                     'natIP': getNatIp(context)
 
                 }]
-            }]
+            }],
+            'metadata': {
+                'items': [
+                    {
+                        'key': 'ssh-keys',
+                        'value': 'user:' + public_key
+                    }
+                ]
+            }
         },
         'metadata': {
             'dependsOn': [my_ip_name]

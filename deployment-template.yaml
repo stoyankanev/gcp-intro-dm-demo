@@ -1,21 +1,18 @@
 imports:
-- path: deployment.py
+  - path: common.py
+  - path: deployment.py
+  - path: vpc.py
+  - path: vm.py
 
 # Check your environment variables file for values!
 resources:
-    # NOTE: This is the admin parent project id that is used to deploy the actual infra project.
-  - name: TODO-PROVIDE-THIS-VALUE
+  - name: "TODO-PROVIDE-THIS-VALUE"
     type: deployment.py
     properties:
-        # Check the values in the sourced env variables file.
-        organization-id: "TODO-PROVIDE-THIS-VALUE"
-        parent-folder-id: "TODO-PROVIDE-THIS-VALUE"
-        billing-account-name: "billingAccounts/TODO-PROVIDE-THIS-VALUE"
-        project-id: "TODO-PROVIDE-THIS-VALUE"
-        project-name: "TODO-PROVIDE-THIS-VALUE"
-        concurrent_api_activation: false
-
-        apis:
-          - compute.googleapis.com
-          - deploymentmanager.googleapis.com
+      prefix: "TODO-PROVIDE-THIS-VALUE"
+      ipCidrRange: "TODO-PROVIDE-THIS-VALUE"
+      region: "TODO-PROVIDE-THIS-VALUE"
+      zone: "TODO-PROVIDE-THIS-VALUE"
+      source_image: "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9"
+      public_key: "TODO-PROVIDE-THIS-VALUE"
 
