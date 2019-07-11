@@ -37,7 +37,6 @@ There are two equivalent cloud native deployment demonstrations in other "Big th
 
 There are a lot of [Terraform examples provided by Google](https://github.com/GoogleCloudPlatform/terraform-google-examples) - you should use these examples as a starting point for your own GCP Terraform IaC, I did too.
 
-BTW. I just later realized that the repo name **gcp-intro-dp-demo** was a bit poor. I was thinking of Deployment manager => deployment => dp when thinking of the acronym. A better and more used acronym would have been dm, of course. Sorry about that, but I'm not going to change it now.
 
 
 # Generating the SSH Key
