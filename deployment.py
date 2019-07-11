@@ -1,6 +1,6 @@
-import sys
-import vpc
 import common
+import vpc
+import vm
 
 
 def GenerateConfig(context):
@@ -9,6 +9,7 @@ def GenerateConfig(context):
         print 'ENTER deployment.GenerateConfig'
     resources = []
     resources += vpc.getResource(context)
+    resources += vm.getResource(context)
     if common.MY_DEBUG:
         print 'EXIT deployment.GenerateConfig, resources: ' + str(resources)
     return {'resources': resources}

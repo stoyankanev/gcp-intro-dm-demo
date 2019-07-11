@@ -1,12 +1,22 @@
 import common
 
 
+def getNetworkName(context):
+    prefix = context.properties['prefix']
+    return prefix + 'vpc'
+
+
+def getSubnetworkName(context):
+    prefix = context.properties['prefix']
+    return prefix + 'app-subnetwork'
+
+
 def createNetwork(context):
+    """Creates the vpc (network)."""
     if common.MY_DEBUG:
         print 'ENTER vpc.createNetwork'
 
-    prefix = context.properties['prefix']
-    my_vpc_name = prefix + 'vpc'
+    my_vpc_name = getNetworkName(context)
 
     ret = {
         'name': my_vpc_name,
@@ -22,16 +32,15 @@ def createNetwork(context):
         print 'EXIT vpc.createNetwork, ret: ' + str(ret)
     return ret
 
+
 def createSubnet(context):
+    """Creates the subnet."""
     if common.MY_DEBUG:
         print 'ENTER vpc.createSubnet'
 
     prefix = context.properties['prefix']
-    my_vpc_name = prefix + 'vpc'
-
-    prefix = context.properties['prefix']
-    my_vpc_name = prefix + 'vpc'
-    my_subnet_name = prefix + 'app-subnet'
+    my_vpc_name = getNetworkName(context)
+    my_subnet_name = getSubnetworkName(context)
     my_region = context.properties['region']
     my_cidr = context.properties['ipCidrRange']
 
@@ -54,15 +63,53 @@ def createSubnet(context):
     return ret
 
 
+def createFirewall(context):
+    """Creates the firewall."""
+    if common.MY_DEBUG:
+        print 'ENTER vpc.createFirewall'
+
+    prefix = context.properties['prefix']
+    my_vpc_name = getNetworkName(context)
+    my_firewall_name = prefix + 'app-firewall'
+
+    ret = {
+        'name': my_firewall_name,
+        'type': 'compute.v1.firewall',
+        'properties': {
+            'network': '$(ref.%s.selfLink)' % my_vpc_name,
+            'description': 'Allow SSH to app-subnetwork VM instances',
+            'priority': 500,
+            'direction': 'INGRESS',
+            'sourceRanges': ['0.0.0.0/0'],
+            'allowed': [{
+                'IPProtocol': 'TCP',
+                'ports': [22]
+            },
+                {
+                    'IPProtocol': 'ICMP',
+                }
+            ]
+        },
+        'metadata': {
+            'dependsOn': [my_vpc_name]
+        }
+    }
+
+    if common.MY_DEBUG:
+        print 'EXIT vpc.createFirewall, ret: ' + str(ret)
+    return ret
+
+
 def getResource(context):
-    """Creates the vpc (network)."""
+    """Creates the vpc entities (vpc, subnet and firewall)."""
     if common.MY_DEBUG:
         print 'ENTER vpc.getResource'
         print 'context: ' + str(context)
 
     network = createNetwork(context)
     subnet = createSubnet(context)
-    ret = [network, subnet]
+    firewall = createFirewall(context)
+    ret = [network, subnet, firewall]
 
     if common.MY_DEBUG:
         print 'EXIT vpc.getResource'

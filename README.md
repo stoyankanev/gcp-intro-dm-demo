@@ -4,14 +4,16 @@
 # Table of Contents  <!-- omit in toc -->
 - [WORK IN PROGRESS](#WORK-IN-PROGRESS)
 - [Introduction](#Introduction)
-- [Issue with Creating the Infra Project Using Deployment Manager](#Issue-with-Creating-the-Infra-Project-Using-Deployment-Manager)
 - [GCP Solution](#GCP-Solution)
   - [Project](#Project)
   - [Vpc](#Vpc)
   - [VM](#VM)
+- [Increment Development](#Increment-Development)
+- [Python Development](#Python-Development)
 - [Demonstration Manuscript](#Demonstration-Manuscript)
 - [Suggestions How to Continue this Demonstration](#Suggestions-How-to-Continue-this-Demonstration)
 - [Investigating Connectivity Issue](#Investigating-Connectivity-Issue)
+- [Issue with Creating the Infra Project Using Deployment Manager](#Issue-with-Creating-the-Infra-Project-Using-Deployment-Manager)
 
 
 # WORK IN PROGRESS
@@ -35,20 +37,6 @@ There are two equivalent cloud native deployment demonstrations in other "Big th
 There are a lot of [Terraform examples provided by Google](https://github.com/GoogleCloudPlatform/terraform-google-examples) - you should use these examples as a starting point for your own GCP Terraform IaC, I did too.
 
 
-# Issue with Creating the Infra Project Using Deployment Manager
-
-I spent one day trying to figure out why I can't create the infra project using Deployment Manager. I tried to follow the [Automating project creation with Google Cloud Deployment Manager](https://cloud.google.com/blog/products/gcp/automating-project-creation-with-google-cloud-deployment-manager) document but I got constantly the same error: 
-
-```text
-message: '{"ResourceType":"cloudresourcemanager.v1.project","ResourceErrorCode":"403","ResourceErrorMessage":{"code":403,"message":"User
-    is not authorized.","status":"PERMISSION_DENIED","statusMessage":"Forbidden","requestPath":"https://cloudresourcemanager.googleapis.com/v1/projects","httpMethod":"POST"}}'
-```
-
-This was really frustrating since I was able to create the infra project earlier using Terraform and also using command ```gcloud projects create ...```. But there was no ```roles/resourcemanager.projectCreator``` role (there was Resource Manager / "Project Deleter" and "Project Mover" roles though, :-) ) when I tried to add that role for the admin project's service account as described in [README](https://github.com/GoogleCloudPlatform/deploymentmanager-samples/tree/master/examples/v2/project_creation) of the project_creation sample.
-
-
-Finally I just gave in - maybe this is not just possible in my corporation GCP organization or I missed something in the configuration. Anyway, I created a script to create the infra project manually. Maybe later when I have more experience to use Deployment Manager I figure out the reason for this - let's then modify this demo so that also the infra project gets created by the deployment manager.
-
 
 # GCP Solution
 
@@ -61,10 +49,11 @@ So, the system is extremely simple (for demonstration purposes): Just one VPC, o
 
 ## Project
 
+TODO: Manually
+
 The project definition creates the infra project that will host all resources in this demonstration. IaC also links this new project to the folder we are using (if you don't have a folder modify the code) and to a billing account (you must have a billing account in order to create resources). We also set auto-create-network to false since we don't want that GCP creates a default VPC for us which it would normally do.
 
 We also turn on certain GCP APIs we need in this project (compute related).
-
 
 ## Vpc
 
@@ -87,6 +76,19 @@ Then we create the external static ip for the compute instance.
 Finally there is the compute instance defitinion. We link this instance to the infra project, provide values for various parameters (zone...) and inject the public ssh key to the machine (to be used later when we use ssh to connect to the VM). We also provide a set of labels for the VM.
 
 
+# Increment Development
+
+TODO: Explain: 
+
+```bash
+gcloud deployment-manager deployments update ${VAR_INFRA_PROJ_ID}-deployment --config deployment.yaml --project $VAR_INFRA_PROJ_ID
+```
+
+# Python Development
+
+TODO: Explain how you used PyCharm and mymain.py.
+
+TODO: Explain how to run in PyCharm and how to check the result json.
 
 # Demonstration Manuscript
 
@@ -135,3 +137,20 @@ We could add e.g. an instance group and a load balancer to this demonstration bu
 When I created the first version of VPC, subnetwork, firewall and VM I couldn't connect to the VM neither using Console SSH or ssh from my local workstation. The VM was not reachable using ping. I created another standard VM using GCP Console into the same subnetwork - same thing. GCP provided nice document for solving connectivity issues: [Troubleshooting SSH](https://cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh). That document didn't help though. A seasoned cloud developer has a best practice in situation like this. Create another version of the entities using either Portal or some tutorial instructions that should work. Verify that the tutorial version works. Then compare all entities (your not-working entity and equivalent tutorial working entity) - in some entity you should see some discrepancy which should give you either the culprit itself or at least some clues how to investivate the issue further. So, I created another custom VPC, subnetwork and firewall using instructions in [Using VPC](https://cloud.google.com/vpc/docs/using-vpc) and was able to pinpoint the issue and fix it. 
 
 While investigating the issue I noticed that when choosing the instance in GCP Console and clicking Edit button and checking the ssh key it complains: ```Invalid key. Required format: <protocol> <key-blob> <username@example.com> or <protocol> <key-blob> google-ssh {"userName":"<username@example.com>", expireOn":"<date>"}``` ... but logging to instance using the key succeeds: ```ssh -i terraform/modules/vm/.ssh/vm_id_rsa user@<EXTERNAL-IP>```. I didn't bother to investigate reason for that error message since I could ssh to the instance using the key.
+
+
+
+# Issue with Creating the Infra Project Using Deployment Manager
+
+I spent one day trying to figure out why I can't create the infra project using Deployment Manager. I tried to follow the [Automating project creation with Google Cloud Deployment Manager](https://cloud.google.com/blog/products/gcp/automating-project-creation-with-google-cloud-deployment-manager) document but I got constantly the same error: 
+
+```text
+message: '{"ResourceType":"cloudresourcemanager.v1.project","ResourceErrorCode":"403","ResourceErrorMessage":{"code":403,"message":"User
+    is not authorized.","status":"PERMISSION_DENIED","statusMessage":"Forbidden","requestPath":"https://cloudresourcemanager.googleapis.com/v1/projects","httpMethod":"POST"}}'
+```
+
+This was really frustrating since I was able to create the infra project earlier using Terraform and also using command ```gcloud projects create ...```. But there was no ```roles/resourcemanager.projectCreator``` role (there was Resource Manager / "Project Deleter" and "Project Mover" roles though, :-) ) when I tried to add that role for the admin project's service account as described in [README](https://github.com/GoogleCloudPlatform/deploymentmanager-samples/tree/master/examples/v2/project_creation) of the project_creation sample.
+
+
+Finally I just gave in - maybe this is not just possible in my corporation GCP organization or I missed something in the configuration. Anyway, I created a script to create the infra project manually. Maybe later when I have more experience to use Deployment Manager I figure out the reason for this - let's then modify this demo so that also the infra project gets created by the deployment manager.
+
