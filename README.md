@@ -2,40 +2,37 @@
 
 
 # Table of Contents  <!-- omit in toc -->
-- [WORK IN PROGRESS](#WORK-IN-PROGRESS)
 - [Introduction](#Introduction)
 - [Generating the SSH Key](#Generating-the-SSH-Key)
 - [GCP Solution](#GCP-Solution)
-  - [Project](#Project)
-  - [Vpc](#Vpc)
-  - [VM](#VM)
-- [Increment Development](#Increment-Development)
-- [Python Development](#Python-Development)
-- [Demonstration Manuscript](#Demonstration-Manuscript)
+  - [Creating the Environmental Variables Script File](#Creating-the-Environmental-Variables-Script-File)
+  - [Creating the Infra Project](#Creating-the-Infra-Project)
+  - [Deployment Manager Code](#Deployment-Manager-Code)
+    - [Deployment Manager Yaml Configuration](#Deployment-Manager-Yaml-Configuration)
+    - [Deployment](#Deployment)
+    - [VPC](#VPC)
+    - [VM](#VM)
+    - [Deployment Script](#Deployment-Script)
+    - [Developing the GCP Infra JSON Representation](#Developing-the-GCP-Infra-JSON-Representation)
+    - [Incremental Development](#Incremental-Development)
+- [Demonstration Manuscript TODO TÄHÄN JÄI](#Demonstration-Manuscript-TODO-T%C3%84H%C3%84N-J%C3%84I)
 - [Suggestions How to Continue this Demonstration](#Suggestions-How-to-Continue-this-Demonstration)
-- [Investigating Connectivity Issue](#Investigating-Connectivity-Issue)
 - [Issue with Creating the Infra Project Using Deployment Manager](#Issue-with-Creating-the-Infra-Project-Using-Deployment-Manager)
 
-
-# WORK IN PROGRESS
-
-I'll delelete this chapter once this demonstration is ready.
-
-Dummy.
 
 # Introduction
 
 This demonstration can be used in training new cloud specialists who don't need to have any prior knowledge of GCP (Google Cloud Platform) but who want to start working on GCP projects and building their GCP competence (well, a bit of GCP knowledge is required - GCP main concepts, how to use the GCP Portal and CLI).
 
-This demonstration is basically the same as [gcp-intro-demo](https://github.com/tieto-pc/gcp-intro-demo) with one difference: gcp-intro-demo uses [Terraform](https://www.terraform.io/) as IaC tool, and gcp-intro-dp-demo uses [GCP Deployment Manager](https://cloud.google.com/deployment-manager/docs/). The idea is to introduce another way to create infrastructure code in GCP and let developers to compare Terraform and GCP Deployment Manager and make their own decision which tool to use in their future projects.
+This demonstration is basically the same as [gcp-intro-demo](https://github.com/tieto-pc/gcp-intro-demo) with one difference: gcp-intro-demo uses [Terraform](https://www.terraform.io/) as IaC tool, and gcp-intro-dm-demo uses [GCP Deployment Manager](https://cloud.google.com/deployment-manager/docs/). The idea is to introduce another way to create infrastructure code in GCP and let developers to compare Terraform and GCP Deployment Manager and make their own decision which tool to use in their future projects.
 
-This project demonstrates basic aspects how to create cloud infrastructure as code. The actual infra is very simple: just one virtual machine instance. We create a virtual private cloud [vpc](https://cloud.google.com/vpc/) and an application subnet into which we create a [VM](https://cloud.google.com/compute/docs/instances/). There is also one [firewall](https://cloud.google.com/vpc/docs/firewalls) in the VPC that allows inbound traffic only using ssh port 22. The IaC also creates a ssh key pair - the public key gets stored in your workstation, the private key will be installed to the VM.
+This project demonstrates basic aspects how to create cloud infrastructure as code. The actual infra is very simple: just one virtual machine instance. We create a virtual private cloud [vpc](https://cloud.google.com/vpc/) and an application subnet into which we create a [VM](https://cloud.google.com/compute/docs/instances/). There is also one [firewall](https://cloud.google.com/vpc/docs/firewalls) in the VPC that allows inbound traffic only using ssh port 22. 
 
 I tried to keep this demonstration as simple as possible. The main purpose is not to provide an example how to create a cloud system (e.g. not recommending VMs over containers) but to provide a very simple example of infrastructure code and tooling related creating the infra. I have provided some suggestions how to continue this demonstration at the end of this document - you can also send me email to my corporate email and suggest what kind of GCP or GCP POCs you need in your team - I can help you to create the POCs for your customer meetings.
 
-There are two equivalent cloud native deployment demonstrations in other "Big three" cloud provider platforms: AWS demonstration - [aws-intro-cloudformation-demo](https://github.com/tieto-pc/aws-intro-cloudformation-demo), and Azure demonstration - [azure-intro-arm-demo](https://github.com/tieto-pc/azure-intro-arm-demo) - compare the terraform code between these GCP, AWS and Azure infra implementations.
+There are two equivalent cloud native deployment demonstrations in other "Big three" cloud provider platforms: AWS demonstration - [aws-intro-cloudformation-demo](https://github.com/tieto-pc/aws-intro-cloudformation-demo), and Azure demonstration - [azure-intro-arm-demo](https://github.com/tieto-pc/azure-intro-arm-demo) - compare these native IaC tools between  GCP, AWS and Azure platforms - they are pretty different (when compared to equivalent Terraform based implementations which are incredibly similar - the very reason why Terraform is my choice of IaC tool).
 
-There are a lot of [Terraform examples provided by Google](https://github.com/GoogleCloudPlatform/terraform-google-examples) - you should use these examples as a starting point for your own GCP Terraform IaC, I did too.
+There are a lot of [GCP Deployment Manager Samples provided by Google](https://github.com/GoogleCloudPlatform/deploymentmanager-samples) - you should use these examples as a starting point for your own GCP Deployment Manager IaC, I did too.
 
 
 
@@ -48,20 +45,17 @@ You can generate the ssh key that we are going to need using the following proce
 ```bash
 mkdir .ssh
 cd .ssh
-ssh-keygen -t rsa -f dp-vm -C user@debian.com
-xclip -sel clip < dp-vm.pub
+ssh-keygen -t rsa -f dm-vm -C user@debian.com
+xclip -sel clip < dm-vm.pub
 ```
 
-Then paste the string to the ```deployment.yaml``` file (there is a [deployment-template.yaml](deployment-template.yaml) that you can use as a template) - for the value of parameter ```public_key```.
+Then paste the string to the ```deployment.yaml``` file (there is a [deployment-template.yaml](dm/deployment-template.yaml) that you can use as a template) - for the value of parameter ```public_key```.
 
-TODO: You can logon to machine like:
+When you are ready with the deployment you can ssh to the VM like:
 
 ```bash
-ssh -i .ssh/dp-vm user@IP-NUMBER-HERE
+ssh -i .ssh/dm-vm user@IP-NUMBER-HERE
 ```
-
-
-
 
 # GCP Solution
 
@@ -71,51 +65,103 @@ The diagram below depicts the main services / components of the solution.
 
 So, the system is extremely simple (for demonstration purposes): Just one VPC, one application subnet and one Compute instance (VM) doing nothing in the subnet. One Firewall rule in the VPC which allows only ssh traffic to the Compute instance. 
 
+## Creating the Environmental Variables Script File
 
-## Project
+First create environment variables file in ~/.gcp/<YOUR-ADMIN-FILE>.sh. Use file [gcp_env_template.sh](gcp_env_template.sh) as a template.
 
-TODO: Manually
+Then source the environment variables file:
 
-The project definition creates the infra project that will host all resources in this demonstration. IaC also links this new project to the folder we are using (if you don't have a folder modify the code) and to a billing account (you must have a billing account in order to create resources). We also set auto-create-network to false since we don't want that GCP creates a default VPC for us which it would normally do.
+```bash
+# Source environment variables.
+source ~/.gcp/<YOUR-ADMIN-FILE>.sh
+```
 
-We also turn on certain GCP APIs we need in this project (compute related).
 
-## Vpc
+## Creating the Infra Project
 
-The [vpc](https://cloud.google.com/vpc/) definition creates the VPC (virtual private cloud), subnet and the firewall rule to allow ssh traffic to this VPC. We set auto-create-subnetworks to false since we want to create the subnet using IaC in this demonstration.
+Due to my GCP organization restrictions I was not able to create the infra project as part of the Deployment Manager IaC (see a more detailed explanation in chapter "Issue with Creating the Infra Project Using Deployment Manager"). Therefore we create the infra project using cli:
+
+```bash
+source ~/.gcp/<YOUR-ADMIN-FILE>.sh
+./create-infra-proj.sh
+```
+
+NOTE: We don't need to create an admin project as in the equivalent [gcp-intro-demo](https://github.com/tieto-pc/gcp-intro-demo) Terraform implementation since we create the deployment and the actual deployed infra resources into the same infra project (and not the deployment in the admin project and the deployed infra resources into the infra project as would have been the case if we could have created the infra project as part of the Deployment Manager IaC, see a more detailed explanation in chapter "Issue with Creating the Infra Project Using Deployment Manager").
+
+The script creates the infra project (id and name are populated by the environment variables file), and then creates a gcloud configuration for the new project and finally turns on the services that we need for the deployment and for the actual infra demonstration (basically compute - for the VM).
+
+
+## Deployment Manager Code
+
+All right. We have the infra project and the cli configuration now. We are ready to make the infra deployment into the infra project but before that let's investigate our Deployment Manager solution a bit.
+
+As [recommended by Google](https://cloud.google.com/deployment-manager/docs/step-by-step-guide/create-a-template) you should use Python to create your GCP Deployment Manager templates. Therefore I'm using Python in this gcp-intro-dm-demo demonstration. The Deployment Manager template files and scripts can be found in the [dm](dm) folder.
+
+
+### Deployment Manager Yaml Configuration
+
+Read the [Creating a Template](https://cloud.google.com/deployment-manager/docs/step-by-step-guide/create-a-template) documentation as an introduction to GCP Deployment Manager configuration files.
+
+First you need to create the Deployment Manager Yaml configuration. Use [deployment-template.yaml](dm/deployment-template.yaml) file as a template. Populate your deployment values to the file. 
+
+This file basically imports the Python configuration files and provides the arguments for various parameters needed in those Python configuration files.
+
+
+### Deployment
+
+The GCP Deployment Manager expects to find a ```GenerateConfig(context)``` function that it uses to create the infrastructure based on the IaC. The file [deployment.py](dm/deployment.py) file provides this function. The nice thing about using Python instead of JSON/YAML (compared to AWS/CloudFormation and Azure/ARM) is that you can use a real Turing complete programming language - and you can create the solution any way you like. I was figuring a bit how to create this solution and I finally decided to create this kind of stucture: vpc.py creates the network infrastructure resources and vm.py the VM infrastructure resources and deployment.py uses vpc.py and vm.py and creates the final deployment manager configuration. If you look at the deployment.py you can see that it calls vpc.py and vm.py modules and adds the infra from those modules to the resources list. Finally this function returns a JSON structure with ```resources``` key. 
+
+So, GCP Deployment Manager expects the ```GenerateConfig(context)``` function return a list which comprises all resources for the infrastructure. We'll see an example later on how to debug this list.
+
+### VPC
+
+The [vpc.py](dm/vpc.py) module creates the [vpc](https://cloud.google.com/vpc/) (virtual private cloud), subnet and the firewall rule to allow ssh traffic to this VPC. We set auto-create-subnetworks to false since we want to create the subnet using IaC in this demonstration.
 
 Note that in GCP VPC is a global entity and you don't assign an address space ([cidr](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)) to it as in AWS and Azure. You assign the address space to subnet. You also need to provide the infra project id which is used to host subnet and firewall rule (and later compute instance).
 
-Finally there is a [firewall rule](https://cloud.google.com/vpc/docs/firewalls) defintion which opens port 22 for ssh connections. NOTE: We do not restrict any source addresses - in real world system you should restrict the source ip addresses, of course. But don't worry - there is just one VM and we protect the VM with ssh keys (see VM chapter later).
+Finally there is a [firewall rule](https://cloud.google.com/vpc/docs/firewalls) definition which opens port 22 for ssh connections. NOTE: We do not restrict any source addresses - in real world system you should restrict the source ip addresses, of course. But don't worry - there is just one VM and we protect the VM with ssh keys (see VM chapter later).
+
+So, the [vpc.py](dm/vpc.py) module creates resources: [network](https://cloud.google.com/compute/docs/reference/rest/v1/networks) (vpc), [subnet](https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks) and [firewall](https://cloud.google.com/compute/docs/reference/rest/v1/firewalls). You can check all [Supported resource types](https://cloud.google.com/deployment-manager/docs/configuration/supported-resource-types) in Google documentation. E.g. the [network](https://cloud.google.com/compute/docs/reference/rest/v1/networks) documentation provides all parameters that you need to populate for that resource. So, basically I used the [Supported resource types](https://cloud.google.com/deployment-manager/docs/configuration/supported-resource-types) to check what parameters I need and created the JSON structure in the related Python function.
+
+The Deployment Manager Python solution provides a nice way to refer to previously created resources, example in subnet which refers to vpc (network):
+
+```python
+'network': '$(ref.%s.selfLink)' % my_vpc_name,
+```
+
+Finally the [vpc.py](dm/vpc.py) module returns the JSON representation of the resources in a list (```ret = [network, subnet, firewall]```).
 
 
-## VM
+### VM
+
+The [vm.py](dm/vm.py) creates the [vm](https://cloud.google.com/compute/docs/instances/) and the external IP.
+
+So, the [vm.py](dm/vm.py) module creates resources: [external ip](https://cloud.google.com/compute/docs/reference/rest/v1/addresses) and [vm](https://cloud.google.com/compute/docs/reference/rest/v1/instances). The idea is the same as in [vpc.py](dm/vpc.py): the [vm.py](dm/vm.py) module creates the JSON representations of the resources and returns them as a list.
 
 
-The [vm](https://cloud.google.com/compute/docs/instances/) module is a also a bit more complex. But let's not be intimidated - let's see what kind of bits and pieces there are in this module. 
+### Deployment Script
 
-We first create the ssh keys to be used for both *nix and Windows workstations (client side). 
-
-Then we create the external static ip for the compute instance. 
-
-Finally there is the compute instance defitinion. We link this instance to the infra project, provide values for various parameters (zone...) and inject the public ssh key to the machine (to be used later when we use ssh to connect to the VM). We also provide a set of labels for the VM.
+The deployment bash script is given in file [create-deployment.sh](dm/create-deployment.sh).
 
 
-# Increment Development
+### Developing the GCP Infra JSON Representation
 
-TODO: Explain: 
+The nice thing about using Python to create the GCP infra JSON representation that you have the full power of a Turing complete programming language. It would be a bit stupid to make some changes to the Python code, try to deploy it using gcloud, wait and find out that your deployment failed for a simple syntax error. Therefore I created [mymain.py](dm/mymain.py) module which I created to check that there were no syntax errors and that the final JSON representation looked the same as [Supported resource types](https://cloud.google.com/deployment-manager/docs/configuration/supported-resource-types) Google documentation.
+
+I used [PyCharm](https://www.jetbrains.com/pycharm/) which is my favourite Python IDE. It is easy to create a Run Configuration in PyCharm and run the main module. In that file I first created a GCP context simulator ```simulateContext()``` which I used to simulate how GCP would inject certain parameters to the deployment (actually I read the exact same Yaml configuration that I use in the actual deployment). So, running the ```main()``` function you can simulate how GCP would create the JSON representation of the infrastructure resources and use this output as a debugging tool. 
+
+
+
+### Incremental Development
+
+When I was developing the infra I created the whole IaC solution in one shot and then just deployed it using the [create-deployment.sh](dm/create-deployment.sh) script - and the deployment went smoothly as in American movies. Of course not. :-)  I created the deployment incrementally - as you always have to do when creating new IaC solutions. So, I used the [create-deployment.sh](dm/create-deployment.sh) script to create the initial deployment (for the first resource: network). Then I incrementally created the next resources one after another and updated the deployment after every new resource:
 
 ```bash
 gcloud deployment-manager deployments update ${VAR_INFRA_PROJ_ID}-deployment --config deployment.yaml --project $VAR_INFRA_PROJ_ID
 ```
 
-# Python Development
 
-TODO: Explain how you used PyCharm and mymain.py.
-
-TODO: Explain how to run in PyCharm and how to check the result json.
-
-# Demonstration Manuscript
+# Demonstration Manuscript TODO TÄHÄN JÄI
 
 NOTE: These instructions are for Linux (most probably should work for Mac as well). If some Tieto employee is using Windows I would appreciate to get a merge request to provide instructions for a Windows workstation as well.
 
@@ -145,7 +191,7 @@ Let's finally give detailed demonstration manuscript how you are able to deploy 
     2.  ssh -i terraform/modules/vm/.ssh/vm_id_rsa user@IP-NUMBER-HERE
 10. Finally destroy the infra using ```terraform destroy``` command. Check manually also using Portal that terraform destroyed all resources. **NOTE**: It is utterly important that you always destroy your infrastructure when you don't need it anymore - otherwise the infra will generate costs to you or to your unit.
 
-The official demo is over. Next you could do the equivalent [gcp-intro-dp-demo](https://github.com/tieto-pc/gcp-intro-dp-demo) that uses GCP Deployment Manager. Then compare the Terraform and Deployment Manager code and also the workflows. Evaluate the two tools - which pros and cons they have when compared to each other? Which one would you like to start using? And why?
+The official demo is over. Next you could do the equivalent [gcp-intro-dm-demo](https://github.com/tieto-pc/gcp-intro-dm-demo) that uses GCP Deployment Manager. Then compare the Terraform and Deployment Manager code and also the workflows. Evaluate the two tools - which pros and cons they have when compared to each other? Which one would you like to start using? And why?
 
 
 # Suggestions How to Continue this Demonstration
@@ -155,14 +201,6 @@ We could add e.g. an instance group and a load balancer to this demonstration bu
 - An instance group (with CRM app baked in) + a load balancer.
 - Logs to StackDriver.
 - Use container instead of VM.
-
-
-# Investigating Connectivity Issue
-
-When I created the first version of VPC, subnetwork, firewall and VM I couldn't connect to the VM neither using Console SSH or ssh from my local workstation. The VM was not reachable using ping. I created another standard VM using GCP Console into the same subnetwork - same thing. GCP provided nice document for solving connectivity issues: [Troubleshooting SSH](https://cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh). That document didn't help though. A seasoned cloud developer has a best practice in situation like this. Create another version of the entities using either Portal or some tutorial instructions that should work. Verify that the tutorial version works. Then compare all entities (your not-working entity and equivalent tutorial working entity) - in some entity you should see some discrepancy which should give you either the culprit itself or at least some clues how to investivate the issue further. So, I created another custom VPC, subnetwork and firewall using instructions in [Using VPC](https://cloud.google.com/vpc/docs/using-vpc) and was able to pinpoint the issue and fix it. 
-
-While investigating the issue I noticed that when choosing the instance in GCP Console and clicking Edit button and checking the ssh key it complains: ```Invalid key. Required format: <protocol> <key-blob> <username@example.com> or <protocol> <key-blob> google-ssh {"userName":"<username@example.com>", expireOn":"<date>"}``` ... but logging to instance using the key succeeds: ```ssh -i terraform/modules/vm/.ssh/vm_id_rsa user@<EXTERNAL-IP>```. I didn't bother to investigate reason for that error message since I could ssh to the instance using the key.
-
 
 
 # Issue with Creating the Infra Project Using Deployment Manager
@@ -176,6 +214,7 @@ message: '{"ResourceType":"cloudresourcemanager.v1.project","ResourceErrorCode":
 
 This was really frustrating since I was able to create the infra project earlier using Terraform and also using command ```gcloud projects create ...```. But there was no ```roles/resourcemanager.projectCreator``` role (there was Resource Manager / "Project Deleter" and "Project Mover" roles though, :-) ) when I tried to add that role for the admin project's service account as described in [README](https://github.com/GoogleCloudPlatform/deploymentmanager-samples/tree/master/examples/v2/project_creation) of the project_creation sample.
 
+Finally I had a conversation with our GCP organization administrator and realized that it is not possible in our GCP organization to create projects from another project using Deployment Manager due organization policy (it is pretty restricted who can create new projects). Therefore in this demonstration we create the infra project using gcloud cli and the infra project is not part of the actual IaC solution (as in the equivalent [gcp-intro-demo](https://github.com/tieto-pc/gcp-intro-demo) Terraform implementation).
 
-Finally I just gave in - maybe this is not just possible in my corporation GCP organization or I missed something in the configuration. Anyway, I created a script to create the infra project manually. Maybe later when I have more experience to use Deployment Manager I figure out the reason for this - let's then modify this demo so that also the infra project gets created by the deployment manager.
+
 
