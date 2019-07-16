@@ -185,7 +185,7 @@ Let's finally give detailed demonstration manuscript how you are able to deploy 
 12. Test to get ssh connection to the VM instance:
     1.  ```gcloud compute instances list``` => list VMs (should be only one) => check the external ip.
     2.  ssh -i .ssh/dm_vm user@IP-NUMBER-HERE
-13. Finally destroy the infra using ```gcloud deployment-manager deployments delete ${VAR_INFRA_PROJ_ID}-deployment --config deployment.yaml --project $VAR_INFRA_PROJ_ID``` command. Check manually also using Portal that all resources in that project have been destroyed. **NOTE**: It is utterly important that you always destroy your infrastructure when you don't need it anymore - otherwise the infra will generate costs to you or to your unit. Finally you can destroy the infra project also either using gcloud cli or the GCP Portal.
+13. Finally destroy the infra using ```gcloud deployment-manager deployments delete ${VAR_INFRA_PROJ_ID}-deployment --project $VAR_INFRA_PROJ_ID``` command. Check manually also using Portal that all resources in that project have been destroyed. **NOTE**: It is utterly important that you always destroy your infrastructure when you don't need it anymore - otherwise the infra will generate costs to you or to your unit. Finally you can destroy the infra project also either using gcloud cli or the GCP Portal.
 
 The official demo is over. Next you could do the equivalent [gcp-intro-demo](https://github.com/tieto-pc/gcp-intro-demo) that uses Terraform. Then compare the Terraform and Deployment Manager code and also the workflows. Evaluate the two tools - which pros and cons they have when compared to each other? Which one would you like to start using? And why?
 
