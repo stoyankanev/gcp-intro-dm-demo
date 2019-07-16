@@ -191,7 +191,7 @@ The official demo is over. Next you could do the equivalent [gcp-intro-demo](htt
 
 # Comparing GCP Deployment Manager and Terraform
 
-In this chapter I shortly compare this gcp-intro-dm-demo that uses [GCP Deployment Manager](https://cloud.google.com/deployment-manager/docs/) to the previous [gcp-intro-demo](https://github.com/tieto-pc/gcp-intro-demo) demonstration that uses [Terraform](https://www.terraform.io/) as IaC tool. Possibly later I write a longer blog post regarding my experiences using these two tools.
+In this chapter I shortly compare this gcp-intro-dm-demo that uses [GCP Deployment Manager](https://cloud.google.com/deployment-manager/docs/) to the previous [gcp-intro-demo](https://github.com/tieto-pc/gcp-intro-demo) demonstration that uses [Terraform](https://www.terraform.io/) as IaC tool. I also wrote a Medium blog article regarding this topic: ["Comparing GCP Deployment Manager and Terraform"](https://medium.com/@kari.marttila/comparing-gcp-deployment-manager-and-terraform-3bc6e1b3aa2d).
 
 The major pro regarding Terraform is that if you do multi-cloud development (as I do - AWS, GCP and Azure) it is a really powerfull benefit to have one tool to create IaC for all three cloud platforms. Terraform also provides powerfull declarative language (HCL) for creating IaC solutions. All major cloud services are supported in Terraform and usually new major services are supported pretty soon they are launched by the cloud provider. 
 
